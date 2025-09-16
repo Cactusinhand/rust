@@ -169,7 +169,7 @@ Refs, marks, and state
 
 Content, sizes, and diffs
 - `git cat-file --batch-all-objects --batch-check=%(objectname) %(objecttype) %(objectsize) %(objectsize:disk)`
-  - Python script: precompute blob sizes to enforce `--max-blob-size` and skip heavy blobs when possible.
+  - Precompute blob sizes to enforce `--max-blob-size` and skip heavy blobs when possible.
   - Code: `GitUtils.get_blob_sizes()` (approx L1698–L1736)
   - Rust rewrite: `BlobSizeTracker` streams batch output, caching only blobs above `--max-blob-size` for filtering and reporting.
   - Code: `filter-repo-rs::stream::BlobSizeTracker` (approx L150–L260)
