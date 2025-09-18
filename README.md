@@ -59,6 +59,9 @@ Key Flags (prototype)
 
 - `--write-report`: write a summary to `.git/filter-repo/report.txt`.
 - `--cleanup [none|standard|aggressive]`: post-import cleanup (reflog expire + gc). Default `none`.
+- `--windows-path-policy [sanitize|skip|error]`: control how Windows-incompatible paths are handled
+  when rebuilding filechanges. `sanitize` (default) rewrites to safe names and records the mapping in
+  the report; `skip` keeps the original names; `error` aborts the run when such paths are encountered.
 - `--quiet`, `--no-reset`: reduce noise / skip post-import reset
 - `--no-reencode`, `--no-quotepath`, `--no-mark-tags`: pass-through fast-export toggles
 - `--backup`: create a git bundle of the selected refs under `.git/filter-repo/` (skipped in `--dry-run`).
@@ -130,7 +133,8 @@ Limitations (prototype)
 - No regex path matching; glob/prefix only.
 - Merge simplification not implemented; we preserve merges but don't trim extra parents.
 - No `--state-branch` yet; marks exported to a file.
-- Windows path policy is always "sanitize" for rebuilt lines (no skip/error modes yet).
+- Windows path sanitization is limited to adjusting characters Windows forbids and trimming trailing
+  dots/spaces; it does not currently detect every possible reserved device name.
 
 Examples
 --------

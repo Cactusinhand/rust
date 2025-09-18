@@ -1,8 +1,17 @@
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CleanupMode { None, Standard, Aggressive }
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WindowsPathPolicy {
+  Sanitize,
+  Skip,
+  Error,
+}
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -76,6 +85,7 @@ pub struct Options {
   pub strip_blobs_with_ids: Option<PathBuf>,
   pub write_report: bool,
   pub cleanup: CleanupMode,
+  pub windows_path_policy: WindowsPathPolicy,
   pub reencode: bool,
   pub quotepath: bool,
   pub mark_tags: bool,
@@ -90,6 +100,7 @@ pub struct Options {
   pub backup_path: Option<PathBuf>,
   pub mode: Mode,
   pub analyze: AnalyzeConfig,
+  pub sanitized_windows_paths: Arc<Mutex<Vec<(Vec<u8>, Vec<u8>)>>>,
 }
 
 impl Default for Options {
@@ -114,6 +125,7 @@ impl Default for Options {
       strip_blobs_with_ids: None,
       write_report: false,
       cleanup: CleanupMode::None,
+      windows_path_policy: WindowsPathPolicy::Sanitize,
       reencode: true,
       quotepath: true,
       mark_tags: true,
@@ -128,6 +140,7 @@ impl Default for Options {
       backup_path: None,
       mode: Mode::Filter,
       analyze: AnalyzeConfig::default(),
+      sanitized_windows_paths: Arc::new(Mutex::new(Vec::new())),
     }
   }
 }
@@ -283,6 +296,18 @@ pub fn parse_args() -> Options {
           }
         };
       }
+      "--windows-path-policy" => {
+        let v = it.next().expect("--windows-path-policy requires one of: sanitize|skip|error");
+        opts.windows_path_policy = match v.as_str() {
+          "sanitize" => WindowsPathPolicy::Sanitize,
+          "skip" => WindowsPathPolicy::Skip,
+          "error" => WindowsPathPolicy::Error,
+          other => {
+            eprintln!("--windows-path-policy: unknown mode '{}'", other);
+            std::process::exit(2);
+          }
+        };
+      }
       "--no-reencode" => {
         opts.reencode = false;
       }
@@ -386,6 +411,7 @@ Commit, tag & ref updates:\n\
 Execution behavior & output:\n\
   --write-report              Write .git/filter-repo/report.txt summary\n\
   --cleanup MODE              none|standard|aggressive (default: none)\n\
+  --windows-path-policy P     sanitize|skip|error for invalid Windows paths (default: sanitize)\n\
   --quiet                     Reduce output noise\n\
   --no-reset                  Skip final 'git reset --hard' in target\n\
 \n\

@@ -128,7 +128,7 @@ pub fn process_commit_line(
   }
   // file changes with path filtering
   if line.starts_with(b"M ") || line.starts_with(b"D ") || line.starts_with(b"C ") || line.starts_with(b"R ") || line == b"deleteall\n" {
-    if let Some(newline) = filechange::handle_file_change_line(line, opts) {
+    if let Some(newline) = filechange::handle_file_change_line(line, opts)? {
       commit_buf.extend_from_slice(&newline);
       *commit_has_changes = true;
     }

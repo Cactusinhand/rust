@@ -13,7 +13,7 @@ mod sanity;
 mod migrate;
 pub mod analysis;
 
-pub use opts::{AnalyzeConfig, AnalyzeThresholds, Mode, Options};
+pub use opts::{AnalyzeConfig, AnalyzeThresholds, Mode, Options, WindowsPathPolicy};
 pub use pathutil::dequote_c_style_bytes;
 
 pub fn run(opts: &Options) -> std::io::Result<()> {

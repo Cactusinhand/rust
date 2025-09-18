@@ -10,12 +10,13 @@ use crate::stream::BlobSizeTracker;
 
 #[derive(Debug)]
 pub struct ReportData {
-    pub stripped_by_size: usize,
-    pub stripped_by_sha: usize,
-    pub modified_blobs: usize,
-    pub samples_size: Vec<Vec<u8>>,     // paths
-    pub samples_sha: Vec<Vec<u8>>,      // paths
-    pub samples_modified: Vec<Vec<u8>>, // paths
+  pub stripped_by_size: usize,
+  pub stripped_by_sha: usize,
+  pub modified_blobs: usize,
+  pub samples_size: Vec<Vec<u8>>,     // paths
+  pub samples_sha: Vec<Vec<u8>>,      // paths
+  pub samples_modified: Vec<Vec<u8>>, // paths
+  pub sanitized_windows_paths: Vec<(Vec<u8>, Vec<u8>)>,
 }
 
 // Flush buffered lightweight tag resets to outputs prior to sending 'done'.
@@ -556,6 +557,15 @@ pub fn finalize(
                 writeln!(f, "\nSample paths (modified):")?;
                 for p in r.samples_modified {
                     f.write_all(&p)?;
+                    f.write_all(b"\n")?;
+                }
+            }
+            if !r.sanitized_windows_paths.is_empty() {
+                writeln!(f, "\nPaths sanitized for Windows compatibility:")?;
+                for (orig, sanitized) in r.sanitized_windows_paths {
+                    f.write_all(&orig)?;
+                    f.write_all(b" -> ")?;
+                    f.write_all(&sanitized)?;
                     f.write_all(b"\n")?;
                 }
             }

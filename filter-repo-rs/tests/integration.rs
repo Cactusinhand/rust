@@ -3457,6 +3457,98 @@ fn cross_platform_unicode_normalization() {
 }
 
 #[test]
+fn windows_path_policy_sanitize_records_changes() {
+    let repo = init_repo();
+    write_file(&repo, "bad:name.txt", "payload");
+    run_git(&repo, &["add", "."]);
+    run_git(&repo, &["commit", "-m", "add invalid windows name"]);
+
+    let mut opts = fr::Options::default();
+    opts.source = repo.clone();
+    opts.target = repo.clone();
+    opts.write_report = true;
+    opts.windows_path_policy = fr::WindowsPathPolicy::Sanitize;
+
+    fr::run(&opts).expect("sanitize policy should succeed");
+
+    let (_code, tree, _err) = run_git(
+        &repo,
+        &["-c", "core.quotepath=false", "ls-tree", "--name-only", "HEAD"],
+    );
+    assert!(
+        tree.contains("bad_name.txt"),
+        "sanitized path missing: {}",
+        tree
+    );
+    assert!(
+        !tree.contains("bad:name.txt"),
+        "original invalid path should be absent: {}",
+        tree
+    );
+
+    let guard = opts.sanitized_windows_paths.lock().unwrap();
+    let entries = guard.as_slice();
+    assert_eq!(
+        entries.len(),
+        1,
+        "expected a single sanitized entry: {:?}",
+        entries
+    );
+    let (orig, sanitized) = &entries[0];
+    assert_eq!(String::from_utf8_lossy(orig), "bad:name.txt");
+    assert_eq!(String::from_utf8_lossy(sanitized), "bad_name.txt");
+}
+
+#[test]
+fn windows_path_policy_skip_retains_original_paths() {
+    let repo = init_repo();
+    write_file(&repo, "bad:name.txt", "payload");
+    run_git(&repo, &["add", "."]);
+    run_git(&repo, &["commit", "-m", "add invalid windows name"]);
+
+    let mut opts = fr::Options::default();
+    opts.source = repo.clone();
+    opts.target = repo.clone();
+    opts.windows_path_policy = fr::WindowsPathPolicy::Skip;
+
+    fr::run(&opts).expect("skip policy should succeed");
+
+    let (_code, tree, _err) = run_git(
+        &repo,
+        &["-c", "core.quotepath=false", "ls-tree", "--name-only", "HEAD"],
+    );
+    assert!(
+        tree.contains("bad:name.txt"),
+        "original path should remain: {}",
+        tree
+    );
+
+    let guard = opts.sanitized_windows_paths.lock().unwrap();
+    assert!(guard.is_empty(), "skip policy should not record sanitized paths");
+}
+
+#[test]
+fn windows_path_policy_error_blocks_invalid_paths() {
+    let repo = init_repo();
+    write_file(&repo, "bad:name.txt", "payload");
+    run_git(&repo, &["add", "."]);
+    run_git(&repo, &["commit", "-m", "add invalid windows name"]);
+
+    let mut opts = fr::Options::default();
+    opts.source = repo.clone();
+    opts.target = repo.clone();
+    opts.windows_path_policy = fr::WindowsPathPolicy::Error;
+
+    let err = fr::run(&opts).expect_err("error policy should fail on invalid path");
+    let msg = format!("{err}");
+    assert!(
+        msg.contains("bad:name.txt"),
+        "error message should cite path: {}",
+        msg
+    );
+}
+
+#[test]
 fn cross_platform_line_endings() {
     let repo = init_repo();
 

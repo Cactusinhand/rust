@@ -1,27 +1,22 @@
 #[allow(dead_code)]
-#[cfg(windows)]
 pub fn sanitize_invalid_windows_path_bytes(p: &[u8]) -> Vec<u8> {
-    let mut out = Vec::with_capacity(p.len());
-    for &b in p {
-        let nb = match b { b'<'|b'>'|b':'|b'"'|b'|'|b'?'|b'*' => b'_', _ => b };
-        out.push(nb);
-    }
-    if let Some(pos) = out.rsplit(|&c| c == b'/').next().map(|comp| out.len() - comp.len()) {
-        let (head, tail) = out.split_at(pos);
-        let mut t = tail.to_vec();
-        while t.last().map_or(false, |c| *c == b'.' || *c == b' ') { t.pop(); }
-        let mut combined = head.to_vec();
-        combined.extend_from_slice(&t);
-        return combined;
-    }
-    let mut o = out;
-    while o.last().map_or(false, |c| *c == b'.' || *c == b' ') { o.pop(); }
-    o
+  let mut out = Vec::with_capacity(p.len());
+  for &b in p {
+    let nb = match b { b'<' | b'>' | b':' | b'"' | b'|' | b'?' | b'*' => b'_', _ => b };
+    out.push(nb);
+  }
+  if let Some(pos) = out.rsplit(|&c| c == b'/').next().map(|comp| out.len() - comp.len()) {
+    let (head, tail) = out.split_at(pos);
+    let mut t = tail.to_vec();
+    while t.last().map_or(false, |c| *c == b'.' || *c == b' ') { t.pop(); }
+    let mut combined = head.to_vec();
+    combined.extend_from_slice(&t);
+    return combined;
+  }
+  let mut o = out;
+  while o.last().map_or(false, |c| *c == b'.' || *c == b' ') { o.pop(); }
+  o
 }
-
-#[allow(dead_code)]
-#[cfg(not(windows))]
-pub fn sanitize_invalid_windows_path_bytes(p: &[u8]) -> Vec<u8> { p.to_vec() }
 
 #[allow(dead_code)]
 pub fn dequote_c_style_bytes(s: &[u8]) -> Vec<u8> {

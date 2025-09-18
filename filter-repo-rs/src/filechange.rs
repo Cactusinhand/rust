@@ -1,4 +1,6 @@
-use crate::opts::Options;
+use std::io;
+
+use crate::opts::{Options, WindowsPathPolicy};
 use crate::pathutil::{
   dequote_c_style_bytes, enquote_c_style_bytes, glob_match_bytes, needs_c_style_quote,
   sanitize_invalid_windows_path_bytes,
@@ -12,6 +14,8 @@ enum FileChange {
   Copy { src: Vec<u8>, dst: Vec<u8> },
   Rename { src: Vec<u8>, dst: Vec<u8> },
 }
+
+const WINDOWS_SANITIZED_SAMPLE_LIMIT: usize = 20;
 
 // Parse a fast-export filechange line we care about. Returns None if the line
 // is not recognized as a supported filechange directive.
@@ -111,7 +115,15 @@ fn should_keep(paths: &[&[u8]], opts: &Options) -> bool {
   if opts.invert_paths { !matched } else { matched }
 }
 
-fn rewrite_path(mut path: Vec<u8>, opts: &Options) -> Vec<u8> {
+fn record_sanitized_path(opts: &Options, original: &[u8], sanitized: &[u8]) {
+  if let Ok(mut guard) = opts.sanitized_windows_paths.lock() {
+    if guard.len() >= WINDOWS_SANITIZED_SAMPLE_LIMIT { return; }
+    if guard.iter().any(|(o, s)| o.as_slice() == original && s.as_slice() == sanitized) { return; }
+    guard.push((original.to_vec(), sanitized.to_vec()));
+  }
+}
+
+fn rewrite_path(mut path: Vec<u8>, opts: &Options) -> io::Result<Vec<u8>> {
   if !opts.path_renames.is_empty() {
     for (old, new_) in &opts.path_renames {
       if path.starts_with(old) {
@@ -121,7 +133,28 @@ fn rewrite_path(mut path: Vec<u8>, opts: &Options) -> Vec<u8> {
       }
     }
   }
-  sanitize_invalid_windows_path_bytes(&path)
+  let sanitized = sanitize_invalid_windows_path_bytes(&path);
+  if sanitized != path {
+    match opts.windows_path_policy {
+      WindowsPathPolicy::Sanitize => {
+        record_sanitized_path(opts, &path, &sanitized);
+        Ok(sanitized)
+      }
+      WindowsPathPolicy::Skip => Ok(path),
+      WindowsPathPolicy::Error => {
+        let disp = String::from_utf8_lossy(&path);
+        Err(io::Error::new(
+          io::ErrorKind::Other,
+          format!(
+            "path '{}' is not valid on Windows; rerun with --windows-path-policy skip to retain the original name",
+            disp
+          ),
+        ))
+      }
+    }
+  } else {
+    Ok(path)
+  }
 }
 
 fn encode_path(path: &[u8]) -> Vec<u8> {
@@ -129,10 +162,10 @@ fn encode_path(path: &[u8]) -> Vec<u8> {
 }
 
 // Return Some(new_line) if the filechange should be kept (possibly rebuilt), None to drop.
-pub fn handle_file_change_line(line: &[u8], opts: &Options) -> Option<Vec<u8>> {
+pub fn handle_file_change_line(line: &[u8], opts: &Options) -> io::Result<Option<Vec<u8>>> {
   let parsed = match parse_file_change_line(line) {
     Some(p) => p,
-    None => return Some(line.to_vec()),
+    None => return Ok(Some(line.to_vec())),
   };
 
   let keep = match &parsed {
@@ -143,12 +176,12 @@ pub fn handle_file_change_line(line: &[u8], opts: &Options) -> Option<Vec<u8>> {
       should_keep(&[src.as_slice(), dst.as_slice()], opts)
     }
   };
-  if !keep { return None; }
+  if !keep { return Ok(None); }
 
-  match parsed {
+  let rewritten = match parsed {
     FileChange::DeleteAll => Some(line.to_vec()),
     FileChange::Modify { mode, id, path } => {
-      let new_path = rewrite_path(path, opts);
+      let new_path = rewrite_path(path, opts)?;
       let mut rebuilt = Vec::with_capacity(line.len() + new_path.len());
       rebuilt.extend_from_slice(b"M ");
       rebuilt.extend_from_slice(&mode);
@@ -161,7 +194,7 @@ pub fn handle_file_change_line(line: &[u8], opts: &Options) -> Option<Vec<u8>> {
       Some(rebuilt)
     }
     FileChange::Delete { path } => {
-      let new_path = rewrite_path(path, opts);
+      let new_path = rewrite_path(path, opts)?;
       let mut rebuilt = Vec::with_capacity(2 + new_path.len() + 2);
       rebuilt.extend_from_slice(b"D ");
       let enc = encode_path(&new_path);
@@ -170,8 +203,8 @@ pub fn handle_file_change_line(line: &[u8], opts: &Options) -> Option<Vec<u8>> {
       Some(rebuilt)
     }
     FileChange::Copy { src, dst } => {
-      let new_src = rewrite_path(src, opts);
-      let new_dst = rewrite_path(dst, opts);
+      let new_src = rewrite_path(src, opts)?;
+      let new_dst = rewrite_path(dst, opts)?;
       let mut rebuilt = Vec::with_capacity(line.len() + new_src.len() + new_dst.len());
       rebuilt.extend_from_slice(b"C ");
       let enc_src = encode_path(&new_src);
@@ -183,8 +216,8 @@ pub fn handle_file_change_line(line: &[u8], opts: &Options) -> Option<Vec<u8>> {
       Some(rebuilt)
     }
     FileChange::Rename { src, dst } => {
-      let new_src = rewrite_path(src, opts);
-      let new_dst = rewrite_path(dst, opts);
+      let new_src = rewrite_path(src, opts)?;
+      let new_dst = rewrite_path(dst, opts)?;
       let mut rebuilt = Vec::with_capacity(line.len() + new_src.len() + new_dst.len());
       rebuilt.extend_from_slice(b"R ");
       let enc_src = encode_path(&new_src);
@@ -195,5 +228,6 @@ pub fn handle_file_change_line(line: &[u8], opts: &Options) -> Option<Vec<u8>> {
       rebuilt.push(b'\n');
       Some(rebuilt)
     }
-  }
+  };
+  Ok(rewritten)
 }
