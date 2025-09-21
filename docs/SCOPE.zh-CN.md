@@ -109,7 +109,7 @@ Python 原版特有、可不对齐的项
 
 - fast‑export 直通/底层细节开关
   - `--no-reencode`、`--no-quotepath`、`--mark-tags/--no-mark-tags`、`--date-order`
-  - 建议：选用合理默认并隐藏开关（仅用于测试或故障排查）。
+  - 建议：选用合理默认并隐藏开关（仅用于测试或故障排查）。【现状：已通过 `--debug-mode` / `FRRS_DEBUG` 隐藏。】
 - 导入后行为小开关
   - `--no-reset`、`--cleanup [none|standard|aggressive]`
   - 建议：简化为布尔 `--cleanup` 或仅保留 standard；`--no-reset` 仅调试可见（或由 `--dry-run` 隐含）。
