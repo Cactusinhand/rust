@@ -109,7 +109,7 @@ These options are low‑frequency in real workflows or feel like plumbing/test t
 
 - Fast‑export passthrough / low‑level knobs
   - `--no-reencode`, `--no-quotepath`, `--mark-tags/--no-mark-tags`, `--date-order`.
-  - Proposal: pick sane defaults and hide behind a debug/test mode.
+  - Proposal: pick sane defaults and hide behind a debug/test mode. (Status: gated behind `--debug-mode` / `FRRS_DEBUG`.)
 - Post‑import behavior micro‑switches
   - `--no-reset`, `--cleanup [none|standard|aggressive]`.
   - Proposal: simplify to a boolean `--cleanup` (or default “standard”); keep `--no-reset` only for debugging (or imply via `--dry-run`).
