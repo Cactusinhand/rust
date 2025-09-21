@@ -100,5 +100,24 @@ Maintenance
 - This document is the living “trade‑off ledger”. Update it with new/removed features, priority shifts, and context.
 - Related docs:
   - PARITY.md (parity/safety notes vs Python)
-  - STATUS.md (current status, limitations, MVP)
+- STATUS.md (current status, limitations, MVP)
 
+Potential “Bloat/Drift” Candidates (current prototype)
+------------------------------------------------------
+
+These options are low‑frequency in real workflows or feel like plumbing/test toggles. Prefer hiding/merging/simplifying them to avoid surface explosion:
+
+- Fast‑export passthrough / low‑level knobs
+  - `--no-reencode`, `--no-quotepath`, `--mark-tags/--no-mark-tags`, `--date-order`.
+  - Proposal: pick sane defaults and hide behind a debug/test mode.
+- Post‑import behavior micro‑switches
+  - `--no-reset`, `--cleanup [none|standard|aggressive]`.
+  - Proposal: simplify to a boolean `--cleanup` (or default “standard”); keep `--no-reset` only for debugging (or imply via `--dry-run`).
+- Analysis “micro‑tuning” flags
+  - `--analyze-total-warn`, `--analyze-total-critical`, `--analyze-large-blob`, `--analyze-ref-warn`, `--analyze-object-warn`, `--analyze-tree-entries`, `--analyze-path-length`, `--analyze-duplicate-paths`, `--analyze-commit-msg-warn`, `--analyze-max-parents-warn`.
+  - Proposal: keep `--analyze`, `--analyze-json`, `--analyze-top` for 80% cases; move thresholds to a config file or environment.
+- Stream override (test‑only)
+  - `--fe_stream_override` (inject a prebuilt fast‑export stream from file).
+  - Proposal: mark test‑only and hide from public docs.
+
+Note: the intent is not to “remove” everything above, but to reduce exposure, adopt safer defaults, or provide higher‑level semantics while keeping maintenance knobs internal.

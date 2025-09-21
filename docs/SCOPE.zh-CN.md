@@ -92,13 +92,32 @@ Python 原版特有、可不对齐的项
   - 回调框架、增量/状态分支、替换引用高级策略、LFS 孤儿检测/SDR 附加产物、
     编码/哈希保留开关、路径正则重命名、stdin 流处理、过度预检/小旗标。
 - 仅在清晰场景/多方反馈时再评估：
-  - `--paths-from-file`、消息 `regex:`、mailmap 身份重写。
+ - `--paths-from-file`、消息 `regex:`、mailmap 身份重写。
 
 维护约定
 --------
 
 - 本文档是持续更新的“取舍清单”。新增/下线能力、优先级变化、决策背景请在此同步。
 - 相关文档：
-  - PARITY.md（与 Python 版的对齐状态与安全说明）
-  - STATUS.md（当前状态、限制与 MVP 计划）
+- PARITY.md（与 Python 版的对齐状态与安全说明）
+- STATUS.md（当前状态、限制与 MVP 计划）
 
+可能的“功能发散与臃肿”候选（当前原型）
+--------------------------------------
+
+以下选项在实际用户场景中出现频率较低，或更像底层/测试开关，建议“隐藏/合并/简化”，避免表面积扩大：
+
+- fast‑export 直通/底层细节开关
+  - `--no-reencode`、`--no-quotepath`、`--mark-tags/--no-mark-tags`、`--date-order`
+  - 建议：选用合理默认并隐藏开关（仅用于测试或故障排查）。
+- 导入后行为小开关
+  - `--no-reset`、`--cleanup [none|standard|aggressive]`
+  - 建议：简化为布尔 `--cleanup` 或仅保留 standard；`--no-reset` 仅调试可见（或由 `--dry-run` 隐含）。
+- 分析参数“微调旋钮”
+  - `--analyze-total-warn`、`--analyze-total-critical`、`--analyze-large-blob`、`--analyze-ref-warn`、`--analyze-object-warn`、`--analyze-tree-entries`、`--analyze-path-length`、`--analyze-duplicate-paths`、`--analyze-commit-msg-warn`、`--analyze-max-parents-warn`
+  - 建议：面向 80% 用户仅保留 `--analyze`、`--analyze-json`、`--analyze-top`；其余阈值改用配置文件或环境变量。
+- 流覆盖开关（测试专用）
+  - `--fe_stream_override`（从文件注入 fast‑export 流）
+  - 建议：标注测试专用，不对外文档化或隐藏至开发模式。
+
+说明：上列并非全部“移除”，而是“降低暴露度/合并为更高层语义/采用更安全默认”。核心目标是减少首次使用的认知负担，并把可维护性留在内部实现。
