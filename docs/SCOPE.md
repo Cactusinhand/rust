@@ -32,6 +32,7 @@ High‑Value (Prioritized) Features
   - Sanitize reserved characters and trailing dot/space; C‑style quoting.
 - Analysis (human/JSON)
   - Footprint, Top objects, hot directories, longest paths, duplicate blobs, parent counts, etc.
+  - Thresholds configurable via `.filter-repo-rs.toml`; see [docs/examples/filter-repo-rs.toml](docs/examples/filter-repo-rs.toml) and enable via `--debug-mode` / `FRRS_DEBUG`.
 
 Why Raw Git Makes This Hard
 ---------------------------
