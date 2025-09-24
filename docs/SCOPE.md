@@ -64,8 +64,8 @@ Low‑Priority / Non‑Core (both ecosystems)
   - `--use-base-name`, regex‑based rename rules.
 - Rare flags/inputs
   - `--stdin`, `--date-order`, `--no-quotepath`, `--no-mark-tags`, `--no-gc`, etc.
-- Rare preflight blockers
-  - Case‑insensitive/Unicode‑normalization ref collisions, stash presence, reflog cardinality.
+- Rare preflight blockers (still low-frequency but now enforced by default)
+  - Case‑insensitive/Unicode‑normalization ref collisions, stash presence, reflog cardinality, replace refs freshness checks.
 
 Python‑specific Items We Intentionally Don’t Match (for now)
 ------------------------------------------------------------
