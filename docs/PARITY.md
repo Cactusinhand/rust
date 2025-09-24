@@ -33,7 +33,7 @@ What’s Implemented (Parity or Equivalent)
   - `--dry-run` (no ref updates/reset/gc) with full debug artifacts.
   - `--partial` (skip remote migration/removal), `--sensitive` (optionally fetch all refs; keep `origin`), `--no-fetch`.
   - Optional preflight `--enforce-sanity` and pre-rewrite `--backup` (bundle of selected refs).
-  - Optional cleanup `--cleanup [none|standard|aggressive]` → reflog expire + `git gc --prune=now`.
+- Optional cleanup via boolean `--cleanup` (standard) or debug-only `--cleanup-aggressive`; legacy `--cleanup=<mode>` continues to parse with warnings during the deprecation window.
 
 - Analyze mode
   - `--analyze` (human) and `--analyze --analyze-json` (machine) for repository metrics and warnings.
@@ -65,7 +65,7 @@ Safety Measures (Current)
 
 - Preflight (`--enforce-sanity`) blocks risky runs unless `--force`:
   - Freshly packed or empty repos; exactly one `origin` remote or no remotes; clean/staged/unstaged/untracked checks; single worktree.
-  - Note: we currently do not block on case-insensitive or Unicode-normalization ref collisions, stash existence, or reflog cardinality.
+  - Case-insensitive and Unicode-normalization reference collisions, stash existence, reflog cardinality limits, and replace-ref-only loose object situations now halt the run with actionable errors.
 
 - Sensitive & partial modes
   - `--sensitive` can fetch all refs to ensure coverage (unless `--no-fetch`), and does not remove `origin` after run; `--partial` skips remote migration/removal entirely.
