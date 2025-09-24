@@ -57,7 +57,6 @@ What’s Missing or Different (vs Python)
   - Current behavior preserves merges (with parent de-duplication); full “degenerate merge pruning with ancestry guarantees” not yet implemented.
 
 - CLI differences
-  - Human-readable sizes (e.g., `5M`) not yet accepted by `--max-blob-size`.
   - Not yet implemented: `--paths-from-file`, `--use-base-name`, and regex-based path rename matching.
   - `--replace-message` supports literal rules; `regex:` for messages and `--preserve-commit-hashes` toggle are planned.
 
