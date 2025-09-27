@@ -191,7 +191,7 @@ Sanity and guardrails (pre-run)
   - Code: `GitUtils.is_repository_bare()` (L1659–L1663); `GitUtils.determine_git_dir()` (L1665–L1672)
 - `git diff --staged --quiet` and `git diff --quiet`: ensure a clean working tree.
   - Code: `_run_sanity_checks()` (approx L3497–L3509)
-- `git ls-files -o`: detect untracked files (ignores internal `__pycache__`).
+- `git ls-files -o --exclude-standard --directory`: detect untracked files efficiently and honor ignore rules.
   - Code: `_run_sanity_checks()` (approx L3500–L3511)
 - `git worktree list`: prevent multi-worktree surprises.
   - Code: `_run_sanity_checks()` (approx L3524–L3529)
