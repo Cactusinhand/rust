@@ -21,7 +21,7 @@
 - 工作区干净（非裸库）：
   - 无已暂存变更（`git diff --staged --quiet`）
   - 无未暂存变更（`git diff --quiet`）
-  - 无未跟踪文件（忽略工具自身 `__pycache__/git_filter_repo.*`）
+  - 无未跟踪文件（使用 `git ls-files -o --exclude-standard --directory`，遵循忽略规则）
 - 未推送变更对齐（非裸库）：本地分支 `refs/heads/*` 与 `refs/remotes/origin/*` 必须一一对应且 commit 一致。
 - 单一 worktree：`git worktree list` 仅一条记录。
 
@@ -83,4 +83,3 @@
 备注
 ----
 以上要点依据 Python 版 `git-filter-repo` 源码梳理（sanity_check、_migrate_origin_to_heads、_ref_update、cleanup、_record_metadata 等）。Rust 版在保障性能与可移植的前提下，优先落地“拒绝在不安全环境改史 + 不可逆清理”两大块，确保用户数据安全与预期一致。
-
